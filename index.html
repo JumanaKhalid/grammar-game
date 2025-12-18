@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شخصيتك النحوية | د. جمانة بنت خالد</title>
+    <!-- استدعاء خطوط عربية: "Amiri" للنصوص التراثية و "Cairo" للعناوين -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- سكريبت المعالجة المبكر (في الرأس) لتجنب أخطاء التحميل -->
+    <script>
+        // تعريف المتغيرات العامة هنا لتكون متاحة فوراً
+        var currentWinnerImage = '';
+        var currentSchoolImage = '';
+
+        // دالة معالجة أخطاء الصور (تم نقلها للأعلى لضمان عملها فور التحميل)
+        function handleImgError(imgElement, label, filename, fallbackUrl) {
+            // المحاولة الأولى: تحميل الصورة البديلة من الإنترنت إذا توفرت
+            if (fallbackUrl && imgElement.src !== fallbackUrl) {
+                imgElement.src = fallbackUrl;
+                return;
+            }
+
+            // إذا فشل كل شيء، إخفاء الصورة وإظهار النص البديل
+            imgElement.style.display = 'none';
+            const placeholder = imgElement.nextElementSibling;
+            if (placeholder && placeholder.classList.contains('img-placeholder')) {
+                placeholder.style.display = 'flex';
+                const textEl = placeholder.querySelector('h3');
+                if(textEl) textEl.textContent = label;
+                
+                // تحديث رسالة الخطأ إذا كان هناك اسم ملف
+                if (filename) {
+                    const errorMsg = placeholder.querySelector('p:not(.error-msg)'); // استهداف الفقرة العادية
+                    // التأكد من أننا نعدل الفقرة الصحيحة (رسالة الخطأ الحمراء)
+                    if (errorMsg && (errorMsg.style.color === 'rgb(211, 47, 47)' || errorMsg.style.color === '#d32f2f')) {
+                         errorMsg.innerHTML = `عذراً، الصورة (${filename}) غير موجودة.<br>تأكد من وضعها بجانب ملف اللعبة.`;
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --primary-ink: #1B263B;    /* لون الحبر الداكن */
+            --basra-color: #1a237e;    /* أزرق البصرة */
+            --kufa-color: #5d4037;     /* بني الكوفة */
+            --gold-accent: #D4AF37;    /* ذهبي */
+            --parchment-bg: #FDFBF7;   /* لون الورق القديم */
+            --paper-texture: #f4ecd8;
+            --tashkeel-color: #d32f2f; /* لون الحركات (أحمر) */
+        }
+
+        body {
+            font-family: 'Amiri', serif;
+            background-color: var(--paper-texture);
+            color: var(--primary-ink);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: radial-gradient(#e0d7c6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* حاوية اللعبة */
+        .game-container {
+            background-color: var(--parchment-bg);
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15), 0 0 0 8px rgba(212, 175, 55, 0.15);
+            width: 100%;
+            max-width: 850px;
+            padding: 40px;
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+            border: 2px solid var(--gold-accent);
+            overflow: hidden;
+        }
+
+        /* زخرفة الزوايا */
+        .game-container::before, .game-container::after {
+            content: "";
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--gold-accent);
+            transition: all 0.5s ease;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .game-container::before { top: 15px; right: 15px; border-bottom: none; border-left: none; }
+        .game-container::after { bottom: 15px; left: 15px; border-top: none; border-right: none; }
+
+        /* العناوين */
+        h1 {
+            font-family: 'Cairo', sans-serif;
+            font-size: 2.2rem;
+            color: var(--basra-color);
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.05);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 25px;
+            font-style: italic;
+            border-bottom: 1px solid var(--gold-accent);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        /* تنسيق الصور والبدائل */
+        .img-wrapper {
+            width: 100%;
+            max-width: 500px;
+            height: 300px;
+            margin: 20px auto;
+            border: 5px double var(--gold-accent);
+            border-radius: 8px;
+            background-color: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .game-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+            display: block; /* ضمان العرض */
+        }
+
+        .game-image:hover { transform: scale(1.02); }
+
+        /* يظهر هذا النص إذا لم تتحمل الصورة */
+        .img-placeholder {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f1e5;
+            color: #8d6e63;
+            font-family: 'Cairo', sans-serif;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 1;
+        }
+        
+        .img-placeholder i { font-size: 2rem; margin-bottom: 10px; opacity: 0.5; }
+
+        /* الأزرار */
+        .btn {
+            background: linear-gradient(135deg, var(--basra-color) 0%, #303f9f 100%);
+            color: #fff;
+            border: none;
+            padding: 12px 45px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(26, 35, 126, 0.3);
+            transition: all 0.3s;
+            margin: 15px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(26, 35, 126, 0.4);
+            background: linear-gradient(135deg, #303f9f 0%, var(--basra-color) 100%);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--basra-color);
+            border: 2px solid var(--basra-color);
+            box-shadow: none;
+        }
+        
+        .btn-secondary:hover {
+            background-color: rgba(26, 35, 126, 0.05);
+        }
+
+        /* الأسئلة والخيارات */
+        .question-container { display: none; }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold-accent), var(--basra-color));
+            width: 0%;
+            transition: width 0.6s ease;
+        }
+
+        .question-text {
+            font-size: 1.7rem;
+            margin-bottom: 40px;
+            line-height: 1.8;
+            font-weight: 700;
+        }
+
+        .tashkeel {
+            color: var(--tashkeel-color);
+            font-weight: bold;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 700px) {
+            .options-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.8rem; }
+            .img-wrapper { height: 200px; }
+        }
+
+        .option-btn {
+            background-color: #fff;
+            border: 2px solid #e0e0e0;
+            color: var(--primary-ink);
+            padding: 25px;
+            font-size: 1.4rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Amiri', serif;
+            font-weight: 600;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .option-btn:hover {
+            border-color: var(--gold-accent);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        /* النتائج */
+        .results-container { display: none; }
+
+        .result-card {
+            background: #fff;
+            border: 1px solid var(--gold-accent);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: var(--gold-accent);
+            color: #fff;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        /* الشرح */
+        .explanation-section {
+            display: none;
+            text-align: right;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 30px;
+            border: 1px solid #e0e0e0;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.02);
+        }
+
+        .explanation-item {
+            margin-bottom: 25px;
+            border-bottom: 1px dashed #d4af37;
+            padding-bottom: 20px;
+        }
+        .explanation-item:last-child { border-bottom: none; }
+
+        .explanation-title {
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            color: var(--primary-ink);
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .explanation-title::before { content: "💡"; }
+
+        .view-row { display: flex; margin-bottom: 8px; align-items: baseline; }
+        .view-label { font-weight: bold; min-width: 60px; }
+        .basra-text { color: var(--basra-color); }
+        .kufa-text { color: var(--kufa-color); }
+
+        /* تأثيرات الحركة */
+        .fade-in { animation: fadeIn 0.6s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .footer-credit {
+            margin-top: 35px;
+            font-size: 0.9rem;
+            color: #888;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            font-family: 'Cairo', sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container fade-in">
+    <!-- ====== شاشة البداية ====== -->
+    <div id="start-screen">
+        <h1>شخصيتك النحوية</h1>
+        <p class="subtitle">"من أنت في بحر اللغة المتلاطم؟"</p>
+        
+        <div class="img-wrapper">
+            <!-- 
+               هام: هنا نستخدم صيغة PNG كما طلبت
+            -->
+            <img src="1.png" alt="واجهة اللعبة" class="game-image" 
+                 onerror="handleImgError(this, 'المدرسة النحوية', '1.png', 'https://images.unsplash.com/photo-1580137197581-df2bb346a786?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80')">
+            
+            <div class="img-placeholder" style="display:none;">
+                <div style="font-size:3rem;">🏛️</div>
+                <h3>المدرسة النحوية</h3>
+                <p style="font-size:0.8rem; color:#d32f2f;">عذراً، الصورة (1.png) غير موجودة.</p>
+            </div>
+        </div>
+
+        <p style="font-size: 1.2rem; line-height: 1.8; margin: 25px 0; max-width: 700px; margin-left: auto; margin-right: auto;">
+            أهلاً بك في رحلة استكشاف الذات اللغوية.<br>
+            سأطرح عليك 5 قضايا نحوية دقيقة، اختر منها ما يوافق سليقتك وما يجري على لسانك.<br>
+            <strong>هل تميل إلى صرامة سيبويه؟ أم إلى مرونة الكسائي؟</strong>
+        </p>
+
+        <button class="btn" onclick="startGame()">ابدأ الاختبار 🔊</button>
+        
+        <div class="footer-credit">
+            تنفيذ: د. جمانة بنت خالد & AI
+        </div>
+    </div>
+
+    <!-- ====== شاشة الأسئلة ====== -->
+    <div id="quiz-screen" class="question-container">
+        <div class="progress-bar-bg">
+            <div id="progress-fill" class="progress-fill"></div>
+        </div>
+        
+        <h3 id="question-number" style="color: var(--gold-accent); font-family: 'Cairo';">السؤال 1 من 5</h3>
+        
+        <!-- مكان السؤال -->
+        <p id="question-text" class="question-text">...</p>
+        
+        <div class="options-grid">
+            <button class="option-btn" id="option-a" onclick="handleAnswer('A')">...</button>
+            <button class="option-btn" id="option-b" onclick="handleAnswer('B')">...</button>
+        </div>
+    </div>
+
+    <!-- ====== شاشة النتائج ====== -->
+    <div id="results-screen" class="results-container">
+        <h1 style="margin-bottom: 20px;">النتيجة النهائية</h1>
+        
+        <div class="result-card fade-in">
+            <span class="badge">شخصيتك النحوية</span>
+            <h2 id="personality-name" style="font-size: 2.2rem; margin: 15px 0; color: var(--basra-color); font-family: 'Amiri';">...</h2>
+            
+            <!-- أزلنا src من هنا لتجنب الخطأ الفوري، سيتم تعيينه بالكود لاحقاً -->
+            <div class="img-wrapper" style="height: 250px; width: 250px; border-radius: 50%;">
+                <img id="personality-image" alt="صورة الشخصية" class="game-image" 
+                     onerror="handleImgError(this, 'صورة الشخصية', currentWinnerImage, 'https://images.unsplash.com/photo-1549633030-89d0743bad01?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80')">
+                <div class="img-placeholder" style="display:none;">
+                    <div style="font-size:3rem;">👤</div>
+                    <h3>الشخصية</h3>
+                </div>
+            </div>
+            
+            <p id="personality-description" style="font-size: 1.2rem; line-height: 1.7;">...</p>
+
+            <div style="background-color: #fcfcfc; border-top: 2px dashed #eee; padding-top: 20px; margin-top: 20px;">
+                <h3 id="school-name" style="color: var(--primary-ink); font-family: 'Cairo';">المدرسة: ...</h3>
+                
+                <div class="img-wrapper" style="height: 200px; border: none; box-shadow: none; background: transparent;">
+                    <img id="school-image" alt="صورة المدرسة" class="game-image" style="border-radius: 8px;" 
+                         onerror="handleImgError(this, 'صورة المدرسة', currentSchoolImage, 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80')">
+                    <div class="img-placeholder" style="display:none; background: #f9f9f9;">
+                        <div style="font-size:2rem;">🏫</div>
+                        <h3>المدرسة</h3>
+                    </div>
+                </div>
+                
+                <p id="school-description" style="font-size: 1.1rem; color: #555;">...</p>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-secondary" onclick="toggleExplanation()">🔍 تحليل إجاباتك</button>
+            <button class="btn" onclick="restartGame()">🔄 إعادة الاختبار</button>
+        </div>
+
+        <!-- قسم الشرح -->
+        <div id="explanation-section" class="explanation-section">
+            <h2 style="text-align: center; color: var(--basra-color); margin-bottom: 25px; font-family: 'Cairo';">تحليل الخلاف النحوي</h2>
+            <div id="explanation-content"></div>
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 20px;" onclick="toggleExplanation()">إغلاق الشرح</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // === نظام الصوت (Web Audio API) ===
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        if (type === 'click') {
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(500, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.15);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.15);
+        } else if (type === 'success') {
+            playNote(523.25, 0, 0.4); // C5
+            playNote(659.25, 0.1, 0.4); // E5
+            playNote(783.99, 0.2, 0.6); // G5
+        }
+    }
+
+    function playNote(freq, delay, duration) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, audioCtx.currentTime + delay);
+        gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + delay + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+        osc.start(audioCtx.currentTime + delay);
+        osc.stop(audioCtx.currentTime + delay + duration);
+    }
+
+    // === بيانات اللعبة (تم تحديث الحركات في السؤال الأول) ===
+    const questions = [
+        {
+            question: "في جملة (اجلس حيث... زيد... جالس)، كيف تنطقها؟",
+            optionA: { 
+                text: "حَيْثُ <span class='tashkeel'>زَيْدٌ</span> جالس (بالرفع)", 
+                school: 'basra' 
+            },
+            optionB: { 
+                text: "حَيْثُ <span class='tashkeel'>زَيْدٍ</span> جالس (بالجر)", 
+                school: 'kufa' 
+            },
+            explanation: {
+                title: "الاسم بعد 'حيث'",
+                basra: "البصريون: يوجبون رفع ما بعد حيث (حيثُ زيدٌ) لأنها تضاف للجمل.",
+                kufa: "الكوفيون: يجيزون جر ما بعد حيث (حيثُ زيدٍ) باعتبارها مضافة للمفرد."
+            }
+        },
+        {
+            question: "في التشبيه المؤكد، أيهما تختار؟",
+            optionA: { text: "كأنه هو <span class='tashkeel'>هِي</span> (ضمير رفع)", school: 'basra' },
+            optionB: { text: "كأنه هو <span class='tashkeel'>إِيَّاها</span> (ضمير نصب)", school: 'kufa' },
+            explanation: {
+                title: "الضمير بعد التوكيد",
+                basra: "البصرة تفضل الرفع (هي) توكيداً للضمير المستتر.",
+                kufa: "الكوفة تجيز النصب (إياها)."
+            }
+        },
+        {
+            question: "في أصل الاشتقاق، ما هو الأصل؟",
+            optionA: { text: "المصدر (الكتابة)", school: 'basra' },
+            optionB: { text: "الفعل (كَتَبَ)", school: 'kufa' },
+            explanation: {
+                title: "أصل المشتقات",
+                basra: "البصرة: المصدر هو الأصل لدلالته على الحدث المجرد.",
+                kufa: "الكوفة: الفعل هو الأصل لأسبقيته في العمل."
+            }
+        },
+        {
+            question: "عند نداء (الرجل)، تقول:",
+            optionA: { text: "يا <span class='tashkeel'>أَيُّهَا</span> الرجل", school: 'basra' },
+            optionB: { text: "يا <span class='tashkeel'>الرَّجُلُ</span> (مباشرة)", school: 'kufa' },
+            explanation: {
+                title: "نداء ما فيه 'أل'",
+                basra: "البصرة: لا يجوز نداء ما فيه أل مباشرة.",
+                kufa: "الكوفة: يجوز نداء ما فيه أل مباشرة."
+            }
+        },
+        {
+            question: "هل يصح قولنا: (ليس قائماً زيدٌ)؟",
+            optionA: { text: "لا، الامتناع أولى", school: 'basra' },
+            optionB: { text: "نعم، يجوز التقديم", school: 'kufa' },
+            explanation: {
+                title: "تقديم خبر ليس",
+                basra: "البصرة تمنع تقديم الخبر لأن 'ليس' فعل جامد.",
+                kufa: "الكوفة تجيز تقديم الخبر قياساً على أخواتها."
+            }
+        }
+    ];
+
+    let currentQuestionIndex = 0;
+    let scores = { basra: 0, kufa: 0 };
+
+    const screens = {
+        start: document.getElementById('start-screen'),
+        quiz: document.getElementById('quiz-screen'),
+        results: document.getElementById('results-screen')
+    };
+
+    const ui = {
+        qNum: document.getElementById('question-number'),
+        qText: document.getElementById('question-text'),
+        btnA: document.getElementById('option-a'),
+        btnB: document.getElementById('option-b'),
+        progress: document.getElementById('progress-fill'),
+        explanation: document.getElementById('explanation-section'),
+        explanationContent: document.getElementById('explanation-content')
+    };
+
+    const resultUI = {
+        name: document.getElementById('personality-name'),
+        img: document.getElementById('personality-image'),
+        desc: document.getElementById('personality-description'),
+        schoolName: document.getElementById('school-name'),
+        schoolImg: document.getElementById('school-image'),
+        schoolDesc: document.getElementById('school-description')
+    };
+
+    function startGame() {
+        playSound('click');
+        screens.start.style.display = 'none';
+        screens.quiz.style.display = 'block';
+        screens.results.style.display = 'none';
+        currentQuestionIndex = 0;
+        scores = { basra: 0, kufa: 0 };
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        // Animation reset
+        ui.qText.style.animation = 'none';
+        ui.qText.offsetHeight; /* trigger reflow */
+        ui.qText.style.animation = 'fadeIn 0.5s ease-out';
+
+        const q = questions[currentQuestionIndex];
+        
+        ui.qNum.textContent = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        ui.qText.innerHTML = q.question; // Use innerHTML to render spans
+        
+        ui.btnA.innerHTML = q.optionA.text;
+        ui.btnA.dataset.school = q.optionA.school;
+        
+        ui.btnB.innerHTML = q.optionB.text;
+        ui.btnB.dataset.school = q.optionB.school;
+
+        const progressPercent = ((currentQuestionIndex) / questions.length) * 100;
+        ui.progress.style.width = `${progressPercent}%`;
+    }
+
+    function handleAnswer(option) {
+        playSound('click');
+        
+        const btn = option === 'A' ? ui.btnA : ui.btnB;
+        const school = btn.dataset.school;
+        scores[school]++;
+        
+        currentQuestionIndex++;
+        
+        if (currentQuestionIndex < questions.length) {
+            loadQuestion();
+        } else {
+            ui.progress.style.width = '100%';
+            setTimeout(showResults, 400);
+        }
+    }
+
+    function showResults() {
+        playSound('success');
+        screens.quiz.style.display = 'none';
+        screens.results.style.display = 'block';
+        ui.explanation.style.display = 'none';
+
+        const isBasra = scores.basra > scores.kufa;
+        
+        if (isBasra) {
+            resultUI.name.textContent = "أنت سيبويه!";
+            resultUI.name.style.color = "var(--basra-color)";
+            
+            // تعديل: صيغة PNG
+            currentWinnerImage = "3.png"; 
+            resultUI.img.src = currentWinnerImage; 
+            
+            resultUI.desc.textContent = "أنت تميل إلى الدقة والمنطق والقياس المطرد. تبحث عن العلة في كل قاعدة، ولا تقبل إلا ما وافق الأصول.";
+            
+            resultUI.schoolName.textContent = "مدرستك: البصرة";
+            // تعديل: صيغة PNG
+            currentSchoolImage = "2.png";
+            resultUI.schoolImg.src = currentSchoolImage;
+            
+            resultUI.schoolDesc.textContent = "عاصمة النحو الأولى. منهجها عقلي فلسفي يميل للتجريد ورفض الشاذ.";
+        } else {
+            resultUI.name.textContent = "أنت الكسائي!";
+            resultUI.name.style.color = "var(--kufa-color)";
+            
+            // تعديل: صيغة PNG
+            currentWinnerImage = "4.png"; 
+            resultUI.img.src = currentWinnerImage;
+            
+            resultUI.desc.textContent = "أنت تميل إلى السعة والمرونة واحترام المسموع من العرب وإن قل. لغتك رحبة تتسع للهجات المختلفة.";
+            
+            resultUI.schoolName.textContent = "مدرستك: الكوفة";
+            // تعديل: صيغة PNG
+            currentSchoolImage = "5.png";
+            resultUI.schoolImg.src = currentSchoolImage;
+            
+            resultUI.schoolDesc.textContent = "مدرسة التوسع في الرواية. تقبل الشواهد النادرة وتقيس عليها.";
+        }
+
+        prepareExplanations();
+    }
+
+    function prepareExplanations() {
+        ui.explanationContent.innerHTML = '';
+        questions.forEach((q, i) => {
+            const div = document.createElement('div');
+            div.className = 'explanation-item';
+            div.innerHTML = `
+                <div class="explanation-title">القضية ${i + 1}: ${q.explanation.title}</div>
+                <div class="view-row"><span class="view-label basra-text">البصرة:</span> <span>${q.explanation.basra}</span></div>
+                <div class="view-row"><span class="view-label kufa-text">الكوفة:</span> <span>${q.explanation.kufa}</span></div>
+            `;
+            ui.explanationContent.appendChild(div);
+        });
+    }
+
+    function toggleExplanation() {
+        playSound('click');
+        if (ui.explanation.style.display === 'block') {
+            ui.explanation.style.display = 'none';
+        } else {
+            ui.explanation.style.display = 'block';
+            ui.explanation.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    function restartGame() {
+        playSound('click');
+        screens.results.style.display = 'none';
+        screens.start.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
